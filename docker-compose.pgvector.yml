@@ -1,0 +1,30 @@
+# PostgreSQL 16 + pgvector for ImpactGraph's vector search.
+# Published on host port 5433 so it never collides with a native PostgreSQL on 5432.
+#
+# The password is NOT stored here. Provide it from your shell environment:
+#   PowerShell:  $env:POSTGRES_PASSWORD = "<choose one>"
+#   bash:        export POSTGRES_PASSWORD="<choose one>"
+# then:
+#   docker compose -f docker-compose.pgvector.yml up -d
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: impactgraph-pgvector
+    environment:
+      POSTGRES_DB: impactgraph
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment first}
+    ports:
+      - "5433:5432"
+    volumes:
+      - impactgraph_pgdata:/var/lib/postgresql/data
+      - ./:/sql:ro          # repo SQL files, read-only, for psql -f /sql/<file>.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d impactgraph"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  impactgraph_pgdata:
